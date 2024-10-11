@@ -1,0 +1,72 @@
+services:
+  apod:
+    container_name: apod
+    env_file: .env
+    build: .
+    ports: 
+      - ${APP_PORT}:8080 
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      minio:
+        condition: service_healthy
+    networks:
+      - apod_network
+  
+  postgres:
+    image: postgres:16.4-bullseye
+    container_name: postgres
+    env_file: .env
+    environment:
+      - POSTGRES_USER=${DB_USER}  
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+      - DATABASE_HOST=${DB_HOST} 
+    ports:
+      - '5432:5432'
+    volumes:
+      - database_postgres:/var/lib/postgresql/data
+    networks:
+      - apod_network
+    healthcheck:
+      test: pg_isready --username=${DB_USER} && psql --username=${DB_USER} --list
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  migrate:
+    image: migrate/migrate:4
+    networks:
+      - apod_network
+    volumes:
+      - ./migrations/:/migrations
+    command: ["-path", "/migrations", "-database",  "postgres://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}?sslmode=disable", "up"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+        
+  minio:
+    container_name: minio
+    image: quay.io/minio/minio:RELEASE.2024-10-02T17-50-41Z
+    env_file: .env
+    volumes:
+      - 'minio_data:/data'
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    restart: always
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - apod_network
+
+volumes:
+  database_postgres:           
+  minio_data:
+
+networks:
+  apod_network:

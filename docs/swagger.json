@@ -1,0 +1,117 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Сервис предоставляет возможность получения \"a picture of the day\" и его метаданные",
+        "title": "APOD API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "paths": {
+        "/api/apod/": {
+            "get": {
+                "description": "Позволяет получить метаданные всех доступных изображений",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "data"
+                ],
+                "summary": "Получение метаданных всех доступных изображений",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dtos.ImageMetadataResponse"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Если мы не можем получить изображение(я) из хранилища или в случае других непредвиденных проблем",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/apod/{date}": {
+            "get": {
+                "description": "Позволяет получить метаданные изображения согласно переданной дате",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "data"
+                ],
+                "summary": "Получение метаданных изображения",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Дата в формате YYYY-MM-DD",
+                        "name": "date",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ImageMetadataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Если в качестве параметра передана неправильная дата или она не в формате YYYY-MM-DD. Сообщение: invalid_date",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Если метаданные по переданной дате отсутствуют. Сообщение: not_found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Если мы не можем получить изображение из хранилища или в случае других непредвиденных проблем",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "dtos.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.ImageMetadataResponse": {
+            "type": "object",
+            "properties": {
+                "copyright": {
+                    "type": "string"
+                },
+                "date": {
+                    "type": "string"
+                },
+                "explanation": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}
